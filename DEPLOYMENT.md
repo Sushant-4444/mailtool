@@ -58,11 +58,14 @@ docker-compose up -d
 
 6. **Configure firewall**
 ```bash
-sudo ufw allow 3000/tcp
-sudo ufw allow 5000/tcp
-sudo ufw allow 22/tcp
+sudo ufw allow 3000/tcp   # Frontend
+sudo ufw allow 5000/tcp   # Backend API
+sudo ufw allow 6379/tcp   # Redis (optional, only if accessing externally)
+sudo ufw allow 22/tcp     # SSH
 sudo ufw enable
 ```
+
+**Note:** Port 6379 (Redis) only needs to be open if accessing Redis from outside Docker network.
 
 Access: http://your-server-ip:3000
 
@@ -166,11 +169,23 @@ docker service scale mailtool_backend=3
 ### Health Checks
 
 ```bash
-# Backend health
+# Backend health (includes Redis status)
 curl http://localhost:5000/health
 
 # Check all services
 docker-compose ps
+
+# Should show:
+# - mailtool-backend (healthy)
+# - mailtool-frontend (healthy)
+# - mailtool-redis (healthy)
+
+# Check Redis directly
+docker exec -it mailtool-redis redis-cli ping
+# Should return: PONG
+
+# View job queue stats
+curl http://localhost:5000/api/campaigns/jobs?status=completed
 ```
 
 ### Logs
@@ -215,11 +230,16 @@ docker-compose up --build -d
 
 ## Performance Tips
 
-1. **Email Rate Limiting**
-   - Gmail: Max 500/day
-   - Add delays between emails (already implemented)
+1. **Email Rate Limiting (configured in .env)**
+   - Gmail Personal: `EMAIL_BATCH_SIZE=8`, `EMAIL_BATCH_DELAY=600` (default)
+   - Gmail Workspace: `EMAIL_BATCH_SIZE=20`, `EMAIL_BATCH_DELAY=200`
+   - Dedicated SMTP: `EMAIL_BATCH_SIZE=50`, `EMAIL_BATCH_DELAY=50`
 
-2. **Resource Limits**
+2. **Worker Concurrency**
+   - `WORKER_CONCURRENCY=2` - Safe for Gmail Personal
+   - Increase to 3-5 for dedicated SMTP servers
+
+3. **Resource Limits**
 ```yaml
 # docker-compose.yml
 services:
@@ -227,13 +247,20 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
-          memory: 1G
+          cpus: '2'
+          memory: 2G
+  redis:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 ```
 
-3. **Database Optimization**
-   - Regular cleanup of old campaigns
-   - Index frequently queried fields
+4. **Redis Persistence**
+   - Job data persists in Redis volume
+   - Auto-cleanup: completed jobs after 24h, failed after 7d
+   - Monitor Redis memory: `docker stats mailtool-redis`
 
 ---
 
@@ -257,6 +284,9 @@ ports:
 - Check .env credentials
 - Verify SMTP port not blocked
 - Check email provider limits
+- View job queue: `curl http://localhost:5000/api/campaigns/jobs?status=failed`
+- Check Redis connection: `docker-compose logs redis`
+- Restart worker: `docker-compose restart backend`
 
 ---
 

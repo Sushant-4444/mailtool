@@ -144,6 +144,11 @@ EMAIL_PASS=abcd efgh ijkl mnop
 docker-compose up -d
 ```
 
+This will start 3 services:
+- **frontend** - React UI (port 3000)
+- **backend** - Node.js API (port 5000)
+- **redis** - Job queue (port 6379)
+
 Wait 30-60 seconds, then open: **http://localhost:3000**
 
 ---
@@ -190,13 +195,20 @@ jane@example.com,Jane,Smith,Tech Inc
 6. **Review & Send:**
    - Check preview
    - Click "Launch Campaign"
+   - **Campaign is queued instantly** (no waiting!)
+   - You'll receive a Job ID
 
-### Step 4: View Results
+### Step 4: Track Progress
 
-After sending, you'll see:
-- ✅ Success count
-- ❌ Failed count (if any)
-- Detailed error messages for failures
+The campaign processes in the background:
+- **No HTTP timeout** - even for 1000+ emails!
+- Poll job status using the Job ID
+- View real-time progress
+- See results when complete:
+  - ✅ Success count
+  - ❌ Failed count (if any)
+  - Detailed error messages for failures
+  - Automatic retry (3 attempts) for transient failures
 
 ---
 

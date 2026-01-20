@@ -36,6 +36,13 @@
 - Session-based (no permanent storage)
 - Validation and preview
 
+⚡ **High-Performance Async Processing**
+- Redis-powered job queue (BullMQ)
+- Parallel batch email sending (10x-100x faster)
+- No HTTP timeouts for large campaigns
+- Real-time job status tracking
+- Automatic retry on failures
+
 🔒 **Privacy-First**
 - Self-hosted (your server, your data)
 - No third-party access
@@ -84,7 +91,7 @@ docker compose version
 - Docker & Docker Compose (see above)
 - Gmail account with App Password (or any SMTP credentials)
 
-**That's it! No database setup required.**
+**That's it! Redis and job queue are auto-configured in Docker.**
 
 ### Step 1: Clone & Setup
 
@@ -164,17 +171,31 @@ docker-compose down
 
 ## 📖 Documentation
 
+- 🚀 [Quick Start Guide](QUICKSTART.md) - Get running in 5 minutes
+- 🏗️ [Deployment Guide](DEPLOYMENT.md) - Production setup
+- ⚡ [Performance & Scalability](PERFORMANCE.md) - Job queue, parallel processing, tuning
+- 🔧 [Troubleshooting](TROUBLESHOOTING.md) - Common issues & solutions
+- 🔒 [Security Guide](SECURITY.md) - Best practices
+- 🤝 [Contributing](CONTRIBUTING.md) - How to contribute
+
 ### Architecture
 
 ```
 mailtool/
 ├── frontend/          # React + Vite UI
-├── backend/           # Node.js + Express API (stateless)
+├── backend/           # Node.js + Express API
+│   ├── services/
+│   │   ├── emailService.js    # Parallel batch email sending
+│   │   ├── jobQueue.js        # BullMQ job processing
+│   │   └── certificateGenerator.js
+│   └── routes/
+├── redis/             # Job queue storage (via Docker)
 ├── docker-compose.yml # Service orchestration
 └── .env              # Your configuration
 ```
 
-**🎯 Zero Database Required** - All data is session-based for privacy
+**🎯 Stateless Contact Storage** - All contact data is session-based for privacy  
+**⚡ Redis Job Queue** - Handles async campaign processing without HTTP timeouts
 
 ### Usage Guide
 
@@ -193,9 +214,11 @@ mailtool/
 6. **Review & Send**
 
 #### 3️⃣ Track Results
+- Campaign queued instantly (no HTTP timeout)
+- Poll job status in real-time
 - View success/failure counts
 - See detailed error messages for failed emails
-- Copy failed addresses for retry
+- Automatic retry on transient failures (3 attempts)
 
 ### Custom Fields
 
@@ -222,19 +245,34 @@ Course: {{course}}
 
 ### Environment Variables
 
+**Email Configuration:**
+
 | Variable | Description | Default |
-|----------|-------------|---------|
+|----------|-------------|---------|  
 | `EMAIL_USER` | Your email address | Required |
 | `EMAIL_PASS` | App password or SMTP password | Required |
 | `EMAIL_HOST` | SMTP server hostname | `smtp.gmail.com` |
 | `EMAIL_PORT` | SMTP server port | `587` |
 
-| `PORT` | Backend server port | `5000` |
+**Server Configuration:**
 
-### Docker Commands
+| Variable | Description | Default |
+|----------|-------------|---------|  
+| `PORT` | Backend server port | `5000` |
+| `REDIS_HOST` | Redis hostname | `redis` |
+| `REDIS_PORT` | Redis port | `6379` |
+
+**Performance Tuning:**
+
+| Variable | Description | Default |
+|----------|-------------|---------|  
+| `EMAIL_BATCH_SIZE` | Emails sent in parallel per batch | `8` |
+| `EMAIL_BATCH_DELAY` | Delay between batches (ms) | `600` |
+| `WORKER_CONCURRENCY` | Simultaneous campaigns | `2` |
+| `WORKER_MAX_JOBS` | Max jobs per second | `3` |
 
 ```bash
-# Start services
+# Start all services (backend + frontend + redis)
 docker-compose up -d
 
 # Stop services
@@ -243,14 +281,21 @@ docker-compose down
 # Restart services
 docker-compose restart
 
-# View logs
+# View logs (all services)
 docker-compose logs -f
+
+# View specific service logs
+docker-compose logs -f backend
+docker-compose logs -f redis
 
 # Rebuild after code changes
 docker-compose up --build -d
 
-# Remove all data (including database)
+# Remove all data (including Redis job queue)
 docker-compose down -v
+
+# Check service health
+docker-compose ps
 ```
 
 ### Non-Docker Setup
@@ -288,16 +333,23 @@ npm run dev
 3. **Regular Updates** - Pull latest code regularly
 4. **Firewall Rules** - Restrict access to backend port (5000)
 
-### Email Limits
+### Email Limits & Performance
 
-**Gmail Free Account:**
-- 500 emails/day
-- 100 emails per message (BCC)
+**Gmail Personal Account:**
+- 500 emails/day (24-hour rolling period)
+- **Settings optimized:** 8 emails/batch, 600ms delay = ~18 emails/min
+- **Time for 500 emails:** ~30-40 seconds ⚡
 
 **Gmail Workspace:**
 - 2,000 emails/day
+- **Can increase to:** 20 emails/batch, 200ms delay for faster sending
 
-**Recommendation:** Add 1-2 second delays between emails (already implemented)
+**Dedicated SMTP (SendGrid/Mailgun):**
+- Unlimited (based on plan)
+- **Can increase to:** 50-100 emails/batch, 50ms delay
+- **Time for 10,000 emails:** ~30-60 seconds ⚡
+
+**How it works:** Parallel batch processing with configurable delays prevents rate limiting while maximizing speed.
 
 ---
 
@@ -380,15 +432,24 @@ Yes! Fork the repo and modify as needed. It's open source.
 
 **Docker won't start?**
 - Check Docker Desktop is running
-- Ensure ports 3000 and 5000 are free
+- Ensure ports 3000, 5000, and 6379 are free
 
 **Build failing?**
 - Increase Docker memory to 4GB+
 - Check you have 5GB+ free disk space
 
+**Redis connection error?**
+- Check Redis container is running: `docker-compose ps`
+- Restart services: `docker-compose restart`
+
 **Emails not sending?**
 - Verify App Password (not regular password)
 - Check `.env` file has correct credentials
+- View job queue status: `GET /api/campaigns/jobs`
+
+**Campaign stuck in queue?**
+- Check backend logs: `docker-compose logs backend`
+- Verify Redis is healthy: `docker-compose ps redis`
 
 **See full guide:** [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 
