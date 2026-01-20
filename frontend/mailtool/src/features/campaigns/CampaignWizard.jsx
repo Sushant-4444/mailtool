@@ -104,10 +104,7 @@ const CampaignWizard = ({ preloadedContacts = [], onBack }) => {
         }
 
     } catch (error) {
-        setIsProcessing(false);ror: " + data.message);
-        }
-
-    } catch (error) {
+        setIsProcessing(false);
         alert("Network Error: " + error.message);
     }
 };
@@ -258,7 +255,44 @@ const CampaignWizard = ({ preloadedContacts = [], onBack }) => {
 
                    {/* Attachment Status */}
                    <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                        <h3
+                        <h3 className="font-bold text-gray-700 mb-3">Attachments</h3>
+                        <div className="space-y-2">
+                            {/* Certificate */}
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <FileBadge size={18} className={campaignData.certificateConfig ? "text-green-600" : "text-gray-300"} />
+                                    <span className="text-sm">Certificate</span>
+                                </div>
+                                <span className={`text-xs px-2 py-1 rounded ${campaignData.certificateConfig ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400"}`}>
+                                    {campaignData.certificateConfig ? "Enabled" : "Skipped"}
+                                </span>
+                            </div>
+                            
+                            {/* Documents */}
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <FileText size={18} className={campaignData.documentAttachments ? "text-green-600" : "text-gray-300"} />
+                                    <span className="text-sm">Documents</span>
+                                </div>
+                                <span className={`text-xs px-2 py-1 rounded ${campaignData.documentAttachments ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400"}`}>
+                                    {campaignData.documentAttachments ? `${campaignData.documentAttachments.documents.length} files` : "None"}
+                                </span>
+                            </div>
+                        </div>
+                   </div>
+               </div>
+
+               {/* Preview Section */}
+               <div className="mb-8">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Email Body Preview</h3>
+                    <div className="border rounded-lg p-6 bg-white prose prose-sm max-w-none shadow-inner min-h-[150px]">
+                        <div dangerouslySetInnerHTML={{ __html: campaignData.htmlContent || "<em class='text-gray-400'>No content...</em>" }} />
+                    </div>
+               </div>
+
+               {/* Action Footer */}
+               <div className="flex justify-between pt-6 border-t mt-auto">
+                   <button 
                        onClick={prevStep} 
                        className="text-gray-500 hover:text-gray-800 px-4 py-2"
                        disabled={isProcessing}
@@ -340,44 +374,7 @@ const CampaignWizard = ({ preloadedContacts = [], onBack }) => {
             </div>
           </div>
         </div>
-      )}                    <div className="flex items-center gap-2">
-                                    <FileText size={18} className={campaignData.documentAttachments ? "text-green-600" : "text-gray-300"} />
-                                    <span className="text-sm">Documents</span>
-                                </div>
-                                <span className={`text-xs px-2 py-1 rounded ${campaignData.documentAttachments ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400"}`}>
-                                    {campaignData.documentAttachments ? `${campaignData.documentAttachments.documents.length} files` : "None"}
-                                </span>
-                            </div>
-                        </div>
-                   </div>
-               </div>
-
-               {/* Preview Section */}
-               <div className="mb-8">
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Email Body Preview</h3>
-                    <div className="border rounded-lg p-6 bg-white prose prose-sm max-w-none shadow-inner min-h-[150px]">
-                        <div dangerouslySetInnerHTML={{ __html: campaignData.htmlContent || "<em class='text-gray-400'>No content...</em>" }} />
-                    </div>
-               </div>
-
-               {/* Action Footer */}
-               <div className="flex justify-between pt-6 border-t mt-auto">
-                   <button onClick={prevStep} className="text-gray-500 hover:text-gray-800 px-4 py-2">
-                       Back to Edit
-                   </button>
-                   <button 
-                       onClick={handleLaunchCampaign}
-                       className="bg-green-600 text-white px-8 py-3 rounded-lg font-bold shadow-lg hover:bg-green-700 hover:scale-105 transition-all flex items-center gap-2"
-                   >
-                       <Send size={20} />
-                       Launch Campaign
-                   </button>
-               </div>
-            </div>
-          )}
-
-        </div>
-      </div>
+      )}
 
       {/* Results Modal */}
       {showResultsModal && campaignResults && (
