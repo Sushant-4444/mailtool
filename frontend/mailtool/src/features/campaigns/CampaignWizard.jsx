@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Settings, Users, PenTool, FileBadge, Send, CheckCircle, FileText, AlertCircle, X } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Settings, Users, PenTool, FileBadge, Send, CheckCircle, FileText, AlertCircle, X, Loader2, Clock } from 'lucide-react';
 
 // Import sub-components
 import CampaignSetup from './steps/CampaignSetup';
@@ -12,6 +12,9 @@ const CampaignWizard = ({ preloadedContacts = [], onBack }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [campaignResults, setCampaignResults] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [jobId, setJobId] = useState(null);
+  const [jobStatus, setJobStatus] = useState(null);
   
   // The "Mega State" for the campaign
   const [campaignData, setCampaignData] = useState({
@@ -43,13 +46,44 @@ const CampaignWizard = ({ preloadedContacts = [], onBack }) => {
     return [...variables, ...Array.from(customKeys)];
   }, [campaignData.audience]);
 
-  const nextStep = () => setCurrentStep(p => p + 1);
-  const prevStep = () => setCurrentStep(p => p - 1);
+  // Poll job status
+  useEffect(() => {
+    if (!jobId || !isProcessing) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/api/campaigns/status/${jobId}`);
+        const data = await response.json();
+        
+        setJobStatus(data);
+
+        // Job completed or failed
+        if (data.state === 'completed') {
+          clearInterval(pollInterval);
+          setIsProcessing(false);
+          setCampaignResults(data.result);
+          setShowResultsModal(true);
+          setJobId(null);
+        } else if (data.state === 'failed') {
+          clearInterval(pollInterval);
+          setIsProcessing(false);
+          alert(`Campaign failed: ${data.failedReason || 'Unknown error'}`);
+          setJobId(null);
+        }
+      } catch (error) {
+        console.error('Error polling job status:', error);
+      }
+    }, 2000); // Poll every 2 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [jobId, isProcessing]);
 
  const handleLaunchCampaign = async () => {
     if(!window.confirm(`Ready to send to ${campaignData.audience.length} people?`)) return;
 
     console.log("Sending Data:", campaignData);
+    setIsProcessing(true);
+    setJobStatus(null);
 
     try {
         const response = await fetch('http://localhost:5000/api/campaigns/send', {
@@ -61,10 +95,16 @@ const CampaignWizard = ({ preloadedContacts = [], onBack }) => {
         const data = await response.json();
         
         if (response.ok) {
-            setCampaignResults(data.stats);
-            setShowResultsModal(true);
+            // Campaign queued successfully - start polling
+            setJobId(data.jobId);
+            setJobStatus({ state: 'queued', jobId: data.jobId });
         } else {
+            setIsProcessing(false);
             alert("Error: " + data.message);
+        }
+
+    } catch (error) {
+        setIsProcessing(false);ror: " + data.message);
         }
 
     } catch (error) {
@@ -218,22 +258,89 @@ const CampaignWizard = ({ preloadedContacts = [], onBack }) => {
 
                    {/* Attachment Status */}
                    <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                        <h3 className="font-bold text-gray-700 mb-3">Attachments</h3>
-                        <div className="space-y-2">
-                            {/* Certificate */}
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <FileBadge size={18} className={campaignData.certificateConfig ? "text-green-600" : "text-gray-300"} />
-                                    <span className="text-sm">Certificate</span>
-                                </div>
-                                <span className={`text-xs px-2 py-1 rounded ${campaignData.certificateConfig ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400"}`}>
-                                    {campaignData.certificateConfig ? "Enabled" : "Skipped"}
-                                </span>
-                            </div>
-                            
-                            {/* Documents */}
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
+                        <h3
+                       onClick={prevStep} 
+                       className="text-gray-500 hover:text-gray-800 px-4 py-2"
+                       disabled={isProcessing}
+                   >
+                       Back to Edit
+                   </button>
+                   <button 
+                       onClick={handleLaunchCampaign}
+                       disabled={isProcessing}
+                       className="bg-green-600 text-white px-8 py-3 rounded-lg font-bold shadow-lg hover:bg-green-700 hover:scale-105 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                   >
+                       {isProcessing ? (
+                           <>
+                               <Loader2 size={20} className="animate-spin" />
+                               Processing...
+                           </>
+                       ) : (
+                           <>
+                               <Send size={20} />
+                               Launch Campaign
+                           </>
+                       )}
+                   </button>
+               </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+
+      {/* Processing Modal */}
+      {isProcessing && jobStatus && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8">
+            <div className="text-center">
+              <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                <Loader2 size={32} className="text-blue-600 animate-spin" />
+              </div>
+              
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                {jobStatus.state === 'queued' && 'Campaign Queued'}
+                {jobStatus.state === 'waiting' && 'Waiting to Start'}
+                {jobStatus.state === 'active' && 'Sending Emails'}
+                {jobStatus.state === 'delayed' && 'Scheduled'}
+              </h2>
+              
+              <p className="text-gray-600 mb-6">
+                {jobStatus.state === 'queued' && 'Your campaign is queued and will start shortly...'}
+                {jobStatus.state === 'waiting' && 'Preparing to send emails...'}
+                {jobStatus.state === 'active' && `Sending to ${campaignData.audience.length} recipients...`}
+                {jobStatus.state === 'delayed' && 'Campaign scheduled for later...'}
+              </p>
+
+              {jobStatus.progress !== undefined && jobStatus.progress > 0 && (
+                <div className="mb-4">
+                  <div className="flex justify-between text-sm text-gray-600 mb-2">
+                    <span>Progress</span>
+                    <span>{jobStatus.progress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${jobStatus.progress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-gray-50 rounded-lg p-4 text-left">
+                <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                  <Clock size={16} />
+                  <span>Job ID: {jobId}</span>
+                </div>
+                <p className="text-xs text-gray-500">
+                  This may take a few seconds to a few minutes depending on audience size.
+                  You can close this and check status later.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}                    <div className="flex items-center gap-2">
                                     <FileText size={18} className={campaignData.documentAttachments ? "text-green-600" : "text-gray-300"} />
                                     <span className="text-sm">Documents</span>
                                 </div>
