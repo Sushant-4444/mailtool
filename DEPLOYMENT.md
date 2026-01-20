@@ -130,8 +130,7 @@ Access: https://yourdomain.com
 
 3. **New Project** → **Deploy from GitHub**
 
-4. **Add services:**
-   - Add MongoDB database
+4. **Deploy services:**
    - Deploy backend
    - Deploy frontend
 
@@ -208,10 +207,9 @@ docker-compose up --build -d
 - [ ] Use strong passwords in .env
 - [ ] Enable firewall (ufw)
 - [ ] Use HTTPS (SSL certificate)
-- [ ] Regular backups
 - [ ] Monitor logs for suspicious activity
 - [ ] Keep Docker and dependencies updated
-- [ ] Restrict MongoDB access (not public)
+- [ ] Restrict backend port access (5000)
 
 ---
 

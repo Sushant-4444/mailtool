@@ -2,6 +2,8 @@
 logs
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # Dependencies
 node_modules/
@@ -12,23 +14,41 @@ yarn.lock
 .env
 .env.local
 .env.production
+.env.development
 
 # Build outputs
 dist/
 build/
 .vite/
+coverage/
+.next/
+out/
 
 # OS
 .DS_Store
 Thumbs.db
+*.tmp
+*.temp
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*.sublime*
 
 # Docker
 *.pid
 *.seed
 *.pid.lock
+docker-compose.override.yml
+
+# Testing
+coverage/
+.nyc_output/
+
+# Cache
+.cache/
+.eslintcache
+.npm/
+.yarn/

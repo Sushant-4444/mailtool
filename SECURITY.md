@@ -274,8 +274,7 @@ Before going to production:
 - [ ] `.env` file is in `.gitignore`
 - [ ] HTTPS enabled (SSL certificate)
 - [ ] Firewall configured (UFW)
-- [ ] MongoDB not publicly accessible
-- [ ] Regular backups enabled
+- [ ] Backend port (5000) not publicly exposed
 - [ ] Email sending limits understood
 - [ ] Compliance requirements met (GDPR/CAN-SPAM)
 - [ ] Logs monitoring set up

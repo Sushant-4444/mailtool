@@ -46,8 +46,42 @@
 ## 🚀 Quick Start (3 Steps)
 
 ### Prerequisites
-- [Docker](https://docs.docker.com/get-docker/) installed
-- [Docker Compose](https://docs.docker.com/compose/install/) installed
+
+**Don't have Docker?** Follow the installation guide below:
+
+<details>
+<summary>📦 Install Docker (Click to expand)</summary>
+
+#### Windows
+1. Download [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop)
+2. Run installer and restart computer
+3. Verify: Open PowerShell and run `docker --version`
+
+#### Mac
+1. Download [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop) (Intel or Apple Silicon)
+2. Install and launch Docker from Applications
+3. Verify: Open Terminal and run `docker --version`
+
+#### Linux (Ubuntu/Debian)
+```bash
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+Verify:
+```bash
+docker --version
+docker compose version
+```
+
+**Troubleshooting:** If Docker daemon not running, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+
+</details>
+
+**What you need:**
+- Docker & Docker Compose (see above)
 - Gmail account with App Password (or any SMTP credentials)
 
 **That's it! No database setup required.**
@@ -194,7 +228,7 @@ Course: {{course}}
 | `EMAIL_PASS` | App password or SMTP password | Required |
 | `EMAIL_HOST` | SMTP server hostname | `smtp.gmail.com` |
 | `EMAIL_PORT` | SMTP server port | `587` |
-| `MONGODB_URI` | Database connection | Auto-configured |
+
 | `PORT` | Backend server port | `5000` |
 
 ### Docker Commands
@@ -226,7 +260,6 @@ docker-compose down -v
 
 **Prerequisites:**
 - Node.js 18+
-- MongoDB installed locally
 
 **Backend:**
 ```bash
@@ -242,12 +275,6 @@ npm install
 npm run dev
 ```
 
-**MongoDB:**
-```bash
-# Start MongoDB (if not running)
-mongod --dbpath /path/to/data
-```
-
 </details>
 
 ---
@@ -257,10 +284,9 @@ mongod --dbpath /path/to/data
 ### For Self-Hosting
 
 1. **Use App Passwords** - Never use your main email password
-2. **Firewall Rules** - Restrict MongoDB access (port 27017)
-3. **HTTPS** - Use reverse proxy (nginx/Traefik) for production
-4. **Regular Updates** - Pull latest code regularly
-5. **Backup Data** - MongoDB data in `docker volume`
+2. **HTTPS** - Use reverse proxy (nginx/Traefik) for production
+3. **Regular Updates** - Pull latest code regularly
+4. **Firewall Rules** - Restrict access to backend port (5000)
 
 ### Email Limits
 
@@ -333,9 +359,9 @@ docker-compose up --build -d
 <details>
 <summary><strong>Where is my data stored?</strong></summary>
 
-- Database: Docker volume `mongodb_data`
-- Contacts: Session-based (not permanently stored)
+- Contacts: Session-based (in-memory, not permanently stored)
 - All data stays on YOUR server
+- No database required - fully stateless architecture
 
 </details>
 

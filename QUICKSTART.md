@@ -1,22 +1,105 @@
 # Quick Start Guide
 
-## Installation (3 Minutes)
+## Installation (5 Minutes)
 
 ### 1. Install Docker
 
-**Windows/Mac:**
-- Download from [docker.com](https://www.docker.com/get-started)
-- Run installer
-- Restart computer
+#### Windows
 
-**Linux (Ubuntu/Debian):**
+1. **Download Docker Desktop:**
+   - Go to [https://www.docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop)
+   - Click "Download for Windows"
+   
+2. **Install:**
+   - Run the downloaded `Docker Desktop Installer.exe`
+   - Follow the installation wizard (use default settings)
+   
+3. **Restart your computer**
+
+4. **Verify installation:**
+   - Open PowerShell or Command Prompt
+   - Run: `docker --version`
+   - You should see: `Docker version XX.X.X`
+
+#### Mac
+
+1. **Download Docker Desktop:**
+   - Go to [https://www.docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop)
+   - Click "Download for Mac" (choose Intel or Apple Silicon)
+   
+2. **Install:**
+   - Open the downloaded `.dmg` file
+   - Drag Docker to Applications folder
+   - Launch Docker from Applications
+   
+3. **Verify installation:**
+   - Open Terminal
+   - Run: `docker --version`
+   - You should see: `Docker version XX.X.X`
+
+#### Linux (Ubuntu/Debian)
+
+1. **Update package index:**
+```bash
+sudo apt-get update
+```
+
+2. **Install Docker:**
 ```bash
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
+```
+
+3. **Add your user to docker group (avoid using sudo):**
+```bash
 sudo usermod -aG docker $USER
 ```
 
-Log out and back in for group changes to take effect.
+4. **Apply the group changes:**
+```bash
+newgrp docker
+```
+*Or log out and log back in*
+
+5. **Verify installation:**
+```bash
+docker --version
+docker compose version
+```
+
+6. **Start Docker service (if not running):**
+```bash
+sudo systemctl start docker
+sudo systemctl enable docker
+```
+
+#### Linux (Fedora/RHEL/CentOS)
+
+```bash
+sudo dnf -y install dnf-plugins-core
+sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+sudo dnf install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+#### Verify Docker is Running
+
+After installation, verify Docker daemon is running:
+
+**Windows/Mac:** Check if Docker Desktop app is running in system tray
+
+**Linux:**
+```bash
+sudo systemctl status docker
+```
+
+If not running:
+```bash
+sudo systemctl start docker
+```
 
 ### 2. Get Gmail App Password
 
