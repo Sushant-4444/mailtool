@@ -46,6 +46,9 @@ const CampaignWizard = ({ preloadedContacts = [], onBack }) => {
     return [...variables, ...Array.from(customKeys)];
   }, [campaignData.audience]);
 
+  const nextStep = () => setCurrentStep(p => p + 1);
+  const prevStep = () => setCurrentStep(p => p - 1);
+
   // Poll job status
   useEffect(() => {
     if (!jobId || !isProcessing) return;
