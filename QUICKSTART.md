@@ -119,37 +119,46 @@ After sending, you'll see:
 
 ## Common Issues
 
-### "SMTP Authentication Failed"
+### "Docker daemon not running"
 
-- Double-check your EMAIL_PASS is the app password (not your regular password)
-- Make sure 2FA is enabled on Google account
-
-### "Connection Timeout"
-
-- Check your firewall isn't blocking port 587
-- Try port 465 instead (update in .env: `EMAIL_PORT=465`)
-
-### "Services won't start"
-
+Start Docker Desktop or run:
 ```bash
-# Check if Docker is running
-docker ps
-
-# View logs
-docker-compose logs -f
-
-# Restart
-docker-compose restart
+# Linux
+sudo systemctl start docker
 ```
 
 ### "Port already in use"
 
+Another app is using port 3000 or 5000. Either:
+- Close that app, or
+- Change ports in `docker-compose.yml`
+
+### "Build failed"
+
+Try:
 ```bash
-# Change ports in docker-compose.yml:
-ports:
-  - "3001:3000"  # Frontend (was 3000)
-  - "5001:5000"  # Backend (was 5000)
+# Clean rebuild
+docker-compose down --rmi all
+docker-compose up --build -d
+
+# Increase Docker memory to 4GB+
+# Docker Desktop → Settings → Resources
 ```
+
+### Setup takes too long (>10 minutes)
+
+First build can take 5-10 minutes depending on:
+- Internet speed (downloading packages)
+- CPU/RAM (building images)
+- Disk speed
+
+**Normal:** 3-7 minutes  
+**Slow:** 10-15 minutes  
+**Too slow:** Check internet connection
+
+### Still stuck?
+
+See detailed [TROUBLESHOOTING.md](../TROUBLESHOOTING.md)
 
 ---
 

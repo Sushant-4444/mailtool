@@ -3,7 +3,9 @@ version: '3.8'
 services:
   # Backend API
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: mailtool-backend
     restart: unless-stopped
     ports:
@@ -13,21 +15,36 @@ services:
       - PORT=5000
     env_file:
       - .env
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - mailtool-network
 
   # Frontend
   frontend:
-    build: ./frontend/mailtool
+    build:
+      context: ./frontend/mailtool
+      dockerfile: Dockerfile
     container_name: mailtool-frontend
     restart: unless-stopped
     ports:
       - "3000:3000"
     depends_on:
-      - backend
-    environment:
-      - VITE_API_URL=http://localhost:5000
-    volumes:
-      - ./frontend/mailtool:/app
-      - /app/node_modules
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - mailtool-network
+
+networks:
+  mailtool-network:
+    driver: bridge

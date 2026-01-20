@@ -12,6 +12,8 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
+echo "✅ Docker found: $(docker --version)"
+
 # Check if Docker Compose is installed
 if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
     echo "❌ Docker Compose is not installed!"
@@ -19,7 +21,16 @@ if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/
     exit 1
 fi
 
-echo "✅ Docker found"
+echo "✅ Docker Compose found"
+
+# Check if Docker daemon is running
+if ! docker info > /dev/null 2>&1; then
+    echo "❌ Docker daemon is not running!"
+    echo "Please start Docker Desktop or Docker service"
+    exit 1
+fi
+
+echo "✅ Docker daemon is running"
 echo ""
 
 # Create .env file if it doesn't exist
@@ -52,12 +63,41 @@ if grep -q "your-email@gmail.com" .env; then
     fi
 fi
 
+# Stop any existing containers
 echo ""
-echo "🚀 Starting MailTool with Docker..."
+echo "🛑 Stopping any existing containers..."
+docker-compose down 2>/dev/null || true
+
+# Clean up old images (optional)
+echo ""
+echo "🧹 Clean up old images? (y/n)"
+read -r cleanup
+if [[ "$cleanup" =~ ^[Yy]$ ]]; then
+    docker-compose down --rmi all --volumes 2>/dev/null || true
+    echo "✅ Cleanup complete"
+fi
+
+echo ""
+echo "🚀 Building and starting MailTool..."
+echo "   (This may take 3-5 minutes on first run)"
 echo ""
 
-# Build and start containers
+# Build and start containers with progress
 docker-compose up --build -d
+
+# Check build status
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "❌ Build failed! Check the errors above."
+    echo ""
+    echo "Common issues:"
+    echo "  - Missing .env file"
+    echo "  - Docker out of memory (increase in Docker settings)"
+    echo "  - Port conflicts (close other apps using ports 3000/5000)"
+    echo ""
+    echo "For detailed logs, run: docker-compose logs"
+    exit 1
+fi
 
 echo ""
 echo "================================================"
@@ -68,27 +108,52 @@ echo "📦 Services:"
 echo "   - Frontend: http://localhost:3000"
 echo "   - Backend:  http://localhost:5000"
 echo ""
-echo "📊 Check logs:"
-echo "   docker-compose logs -f"
+echo "📊 Useful commands:"
+echo "   View logs:          docker-compose logs -f"
+echo "   Check status:       docker-compose ps"
+echo "   Stop services:      docker-compose down"
+echo "   Restart services:   docker-compose restart"
 echo ""
-echo "🛑 Stop services:"
-echo "   docker-compose down"
+echo "⏳ Waiting for services to be ready..."
+echo "   This may take 30-60 seconds..."
 echo ""
-echo "🔄 Restart services:"
-echo "   docker-compose restart"
-echo ""
-echo "⏳ Waiting for services to be ready (this may take 30-60 seconds)..."
-sleep 10
 
-# Check if services are running
-if docker-compose ps | grep -q "Up"; then
-    echo ""
-    echo "✅ Services are running!"
-    echo "🌐 Open http://localhost:3000 in your browser"
-else
-    echo ""
-    echo "❌ Something went wrong. Check logs with:"
-    echo "   docker-compose logs"
-fi
+# Wait for services with timeout
+TIMEOUT=60
+ELAPSED=0
+while [ $ELAPSED -lt $TIMEOUT ]; do
+    if docker-compose ps | grep -q "Up"; then
+        # Wait a bit more for health checks
+        sleep 10
+        
+        # Check if backend is responding
+        if curl -s http://localhost:5000/health > /dev/null 2>&1; then
+            echo ""
+            echo "✅ Backend is healthy!"
+            
+            # Check if frontend is responding
+            if curl -s http://localhost:3000 > /dev/null 2>&1; then
+                echo "✅ Frontend is healthy!"
+                echo ""
+                echo "🎉 SUCCESS! MailTool is ready!"
+                echo "🌐 Open http://localhost:3000 in your browser"
+                echo ""
+                exit 0
+            fi
+        fi
+    fi
+    
+    sleep 5
+    ELAPSED=$((ELAPSED + 5))
+    echo "   Still starting... ($ELAPSED seconds)"
+done
 
+echo ""
+echo "⚠️  Services started but health checks pending."
+echo "   Give it another minute, then check:"
+echo "   http://localhost:3000"
+echo ""
+echo "If issues persist, check logs:"
+echo "   docker-compose logs backend"
+echo "   docker-compose logs frontend"
 echo ""

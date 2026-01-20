@@ -56,7 +56,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/mailtool.git
+git clone https://github.com/Sushant-4444/mailtool.git
 cd mailtool
 
 # Run setup script (Linux/Mac)
@@ -350,31 +350,31 @@ Yes! Fork the repo and modify as needed. It's open source.
 
 ## 🐛 Troubleshooting
 
-### Emails not sending
+### Common Issues
 
-1. Check `.env` credentials are correct
-2. Verify App Password (not regular password)
-3. Check logs: `docker-compose logs backend`
-4. Ensure SMTP port is not blocked by firewall
+**Docker won't start?**
+- Check Docker Desktop is running
+- Ensure ports 3000 and 5000 are free
 
-### Services won't start
+**Build failing?**
+- Increase Docker memory to 4GB+
+- Check you have 5GB+ free disk space
 
-```bash
-# Check if ports are already in use
-lsof -i :3000  # Frontend
-lsof -i :5000  # Backend
-lsof -i :27017 # MongoDB
+**Emails not sending?**
+- Verify App Password (not regular password)
+- Check `.env` file has correct credentials
 
-# View detailed logs
-docker-compose logs
-```
+**See full guide:** [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 
-### Database issues
+### Get Logs
 
 ```bash
-# Reset database
-docker-compose down -v
-docker-compose up -d
+# View all logs
+docker-compose logs -f
+
+# Specific service
+docker-compose logs backend
+docker-compose logs frontend
 ```
 
 ---
